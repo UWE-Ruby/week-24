@@ -86,6 +86,21 @@ Trailing Hash Arguments
 
     ingredient "white sugar", 1.cup, :prepare => 'with love', 
       :serve => 'with kindness'
+
+!SLIDE
+
+## Blocks
+
+    @@@ Ruby
+    cookie = ChocolateChipCookies.new
+
+    cookie.ingredient "white sugar", 1
+
+    # ... but maybe you prefer
+    
+    cookie.ingredients do |c|
+      c.ingredient "white sugar", 1
+    end
     
 !SLIDE
 
@@ -110,7 +125,75 @@ Trailing Hash Arguments
 
 !SLIDE
 
-## Block Arguments
+## Doing it cleanly 
+
+    @@@ Ruby
+    def using
+    
+      connection = Service.open(HOST,USER,PASS)
+
+      yield connection if block_given?
+
+      connection.close
+      
+    end
+    
+    using do |connection|
+      connection.query "for big data"
+    end
+    
+!SLIDE
+
+## Doing it safely
+
+    @@@ Ruby
+    def safe_using
+
+      begin
+        connection = Service.open(HOST,USER,PASS)
+
+        yield connection if block_given?
+
+        connection.close
+      rescue => exception
+        warn "There was an error #{exception}"
+      end
+      
+    end
+    
+    safe_using do |connection|
+      connection.query "for even bigger data"
+    end
+
+
+
+!SLIDE
+
+## Doing it responsively
+
+    @@@ Ruby
+    def find_me_all_things_that_are_equal_to(this_thing)
+      
+      all_things.map do |thing|
+        
+        yield thing if block_given? and thing == this_thing
+        
+        thing if thing == match_me
+        
+      end.compact
+        
+    end
+    
+    matches = find_me_all_things_that_are_equal_to "myself"
+    
+    find_me_all_things_that_are_equal_to "myself" do |a_match|
+      # change this match
+    end
+    
+        
+!SLIDE
+
+## Block Argument instead of `yield`
 
     @@@ Ruby
     class ChocolateChipCookies
@@ -131,7 +214,7 @@ Trailing Hash Arguments
     
 !SLIDE
 
-## instance_eval
+## `instance_eval`
 
     @@@ Ruby
     class ChocolateChipCookies
@@ -149,4 +232,24 @@ Trailing Hash Arguments
     cookie.ingredients do
       ingredient "white sugar", 1
     end
-    
+
+!SLIDE
+
+## `instance_eval` what?
+
+    @@@ Ruby
+    class ChocolateChipCookies
+      def ingredient(name,amount,preparation_details = {})
+        # implementation
+      end
+
+      def ingredients(&block)
+        ingredient "white sugar", 1
+      end
+    end
+
+    cookie = ChocolateChipCookies.new
+
+    cookie.ingredients do
+      
+    end

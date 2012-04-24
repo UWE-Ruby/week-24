@@ -34,7 +34,7 @@ language changes Ruby's dialect.
 
 #### Goal
 
-A DSL that has some of the features of a language you are already familiar like [RSpec], [Rake], or [Capistrano].
+A DSL that has some of the features of a language you are already familiar like [RSpec](https://www.relishapp.com/rspec), [Rake](http://rake.rubyforge.org/), or [Capistrano](https://github.com/capistrano/capistrano/wiki).
 
 An entirely new DSL that supports some of the features here:
 

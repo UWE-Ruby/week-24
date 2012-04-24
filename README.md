@@ -34,7 +34,7 @@ language changes Ruby's dialect.
 
 #### Goal
 
-A DSL that has some of the features of a language you are already familiar like [RSpec], [Rake], [Capistrano].
+A DSL that has some of the features of a language you are already familiar like [RSpec], [Rake], or [Capistrano].
 
 An entirely new DSL that supports some of the features here:
 
@@ -61,7 +61,7 @@ Chef.recipe "Chocolate Chip Cookies" do
   
   instruction "Bake for about 10 minutes in the preheated oven, or until edges are nicely browned."
   
-  serves 4.dozen "cookies"
+  serves 4.dozen, "cookies"
   
 end
 ```

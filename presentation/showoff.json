@@ -1,0 +1,10 @@
+{ "name": "Configuration", 
+  "sections": [
+    "intro.md",
+    "exercise.md",
+    "concepts.md",
+    "goal.md",
+    "exercise.md",
+    "timer1.md",
+    "retrospective.md" ]
+}

@@ -2,31 +2,111 @@
 
 # Concepts
 
+!SLIDE
+
+## Units
+
+    @@@ Ruby
+    16.ounces
+    2.cups
+
 !SLIDE quote
 
 ## Monkeypatching
 
     @@@ Ruby
     class Fixnum
-      def cup
+
+      def ounces
+        # vanity
         self
+      end
+
+      def cup
+        # conversion to ounces
+        self * 16
       end
     end
 
 !SLIDE quote
 
-## Module Monkeypatching
+## Sharing with Modules
 
     @@@ Ruby
     module Measurements
-      def cup
+      def ounces
         self
       end
     end
-    
+
     class Fixnum
       include Measurements
     end
+
+    class Float
+      include Measurements
+    end
+
+!SLIDE
+
+## Defining Elements
+
+    @@@ Ruby
+    cookie.ingredient "butter", 1.cup, "softened"
+    cookie.ingredient "semisweet chocolate chips", 2.cups
+
+!SLIDE quote
+
+## Optional Parentheses
+
+    @@@ Ruby
+    def ingredient(name,amount,preparation_details)
+      # implementation
+    end
+
+    cookie.ingredient("butter", 1.cup, "softened")
+
+    cookie.ingredient "butter", 1.cup, "softened"
+
+!SLIDE quote
+
+## Optional Parameters
+
+    @@@ Ruby
+    def ingredient(name,amount,preparation_details = "")
+      # implementation
+    end
+
+    cookie.ingredient "butter", 1.cup, "softened"
+    cookie.ingredient "white sugar", 1.cup
+
+
+!SLIDE quote
+
+## Trailing Hash Arguments
+
+    @@@ Ruby
+    def ingredient(name,amount,details = {})
+      details # => { :prepare => 'with love', ...
+    end
+
+    ingredient "white sugar", 1.cup, :prepare => 'with love',
+      :serve => 'with kindness'
+
+
+!SLIDE quote
+
+## Properties
+
+    @@@ Ruby
+    class CookieRecipe
+
+      # You want this...
+      ingredient "butter", 1.cup, "softened"
+      ingredient "white sugar", 1.cup
+
+    end
+
 
 !SLIDE quote
 
@@ -35,73 +115,30 @@
     @@@Ruby
     class ChocolateChipCookies
 
+      # You should implement this...
       def self.ingredient(name,amount,preparation_details)
         # implementation
       end
 
-      ingredient("white sugar", 1.cup,:prepare => 'with love', 
-        :serve => 'with kindness')
+      ingredient "butter", 1.cup, "softened"
+      ingredient "white sugar", 1.cup
 
     end
-
-!SLIDE quote
-
-## Methods
-
-Parentheses can be optional
-
-    @@@ Ruby
-    def ingredient(name,amount,preparation_details)
-      # implementation
-    end
-
-    ingredient("butter", 1.cup, "softened")
-    
-    ingredient "butter", 1.cup, "softened"
-
-!SLIDE quote
-
-## Methods
-
-Optional Parameters
-
-    @@@ Ruby
-    def ingredient(name,amount,preparation_details = "")
-      # implementation
-    end
-
-    ingredient "white sugar", 1.cup
-    
-
-!SLIDE quote
-
-## Methods
-
-Trailing Hash Arguments
-
-    @@@ Ruby
-    def ingredient(name,amount,preparation_details = {})
-      # implementation
-    end
-
-    ingredient "white sugar", 1.cup, :prepare => 'with love', 
-      :serve => 'with kindness'
 
 !SLIDE
 
-## Blocks
+## Succinct Style
 
     @@@ Ruby
     cookie = ChocolateChipCookies.new
-
     cookie.ingredient "white sugar", 1
 
     # ... but maybe you prefer
-    
+
     cookie.ingredients do |c|
       c.ingredient "white sugar", 1
     end
-    
+
 !SLIDE
 
 ## Block Arguments
@@ -111,107 +148,29 @@ Trailing Hash Arguments
       def ingredient(name,amount,preparation_details = {})
         # implementation
       end
-    
+      
+      # you should implement this...
       def ingredients
         yield self if block_given?
       end
     end
-    
-    cookie = ChocolateChipCookies.new
-    
-    cookie.ingredients do |c|
-      c.ingredient "white sugar", 1
-    end
-
-!SLIDE
-
-## Doing it cleanly 
-
-    @@@ Ruby
-    def using
-    
-      connection = Service.open(HOST,USER,PASS)
-
-      yield connection if block_given?
-
-      connection.close
-      
-    end
-    
-    using do |connection|
-      connection.query "for big data"
-    end
-    
-!SLIDE
-
-## Doing it safely
-
-    @@@ Ruby
-    def safe_using
-
-      begin
-        connection = Service.open(HOST,USER,PASS)
-
-        yield connection if block_given?
-
-        connection.close
-      rescue => exception
-        warn "There was an error #{exception}"
-      end
-      
-    end
-    
-    safe_using do |connection|
-      connection.query "for even bigger data"
-    end
-
-
-
-!SLIDE
-
-## Doing it responsively
-
-    @@@ Ruby
-    def find_me_all_things_that_are_equal_to(this_thing)
-      
-      all_things.map do |thing|
-        
-        yield thing if block_given? and thing == this_thing
-        
-        thing if thing == match_me
-        
-      end.compact
-        
-    end
-    
-    matches = find_me_all_things_that_are_equal_to "myself"
-    
-    find_me_all_things_that_are_equal_to "myself" do |a_match|
-      # change this match
-    end
-    
-        
-!SLIDE
-
-## Block Argument instead of `yield`
-
-    @@@ Ruby
-    class ChocolateChipCookies
-      def ingredient(name,amount,preparation_details = {})
-        # implementation
-      end
-
-      def ingredients(&block)
-        block.call(self) if block
-      end
-    end
 
     cookie = ChocolateChipCookies.new
 
     cookie.ingredients do |c|
       c.ingredient "white sugar", 1
     end
+
+## Without that annoying 'c'
+
+    @@@ Ruby
+    cookie = ChocolateChipCookies.new
+
+    cookie.ingredients do
+      ingredient "white sugar", 1
+    end
     
+
 !SLIDE
 
 ## `instance_eval`
@@ -223,7 +182,7 @@ Trailing Hash Arguments
       end
 
       def ingredients(&block)
-        self.instance_eval(&block) if block_given?
+        self.instance_eval(&block) if block?
       end
     end
 
@@ -231,25 +190,4 @@ Trailing Hash Arguments
 
     cookie.ingredients do
       ingredient "white sugar", 1
-    end
-
-!SLIDE
-
-## `instance_eval` what?
-
-    @@@ Ruby
-    class ChocolateChipCookies
-      def ingredient(name,amount,preparation_details = {})
-        # implementation
-      end
-
-      def ingredients(&block)
-        ingredient "white sugar", 1
-      end
-    end
-
-    cookie = ChocolateChipCookies.new
-
-    cookie.ingredients do
-      
     end

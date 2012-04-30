@@ -1,94 +1,279 @@
 !SLIDE
 
-# Additional Concepts
+# Blocks
 
 !SLIDE
 
-## NilGuard
+## Setup, Action, Teardown
 
     @@@ Ruby
-    a ||= []
-
-    a || (a = [])
+    connection = Service.open(HOST,USER,PASS)
+    connection.query "for big data"
+    connection.close
 
 !SLIDE
 
-## Memoization
+## Function with a Parameter
 
     @@@ Ruby
-    class Configuration
+    def query(query_string)
+      connection = Service.open(HOST,USER,PASS)
+      connection.query query_string
+      connection.close
+    end
+
+!SLIDE
+
+## Duplication
+
+    @@@ Ruby
+    def query(query_string)
+      connection = Service.open(HOST,USER,PASS)
+      connection.query query_string
+      connection.close
+    end
     
-      def host
-        @host ||= (@source_1['hostname'] || @source_2['host'])
-      end
-      
+    def update(update_string)
+      connection = Service.open(HOST,USER,PASS)
+      connection.update update_string
+      connection.close
     end
     
 !SLIDE
 
-## Multi-line Memoization
+## You want to do something like this!
 
     @@@ Ruby
-    class Configuration
+    def with_a_connection(EXECUTE_THIS_CODE)
+      connection = Service.open(HOST,USER,PASS)
+      EXECUTE_THIS_CODE
+      connection.close
+    end
+    
+    with_a_connection QUERY_CODE
+    with_a_connection UPDATE_CODE
 
-      def host
-        @host ||= begin
-        
-          # Do some stuff ...
-          @source_1['hostname'] || @source_2['host']
-          
+!SLIDE 
+
+## Taking a step back
+
+    @@@ Ruby
+    def query(connection,query_string)
+      connection.query query_string
+    end
+    
+    connection = Service.open(HOST,USER,PASS)
+    query(connection,"for big data")
+    connection.close
+
+!SLIDE
+
+## More functions
+
+    @@@ Ruby
+    def query(connection,query_string)
+      connection.query query_string
+    end
+    
+    def with_a_connection(operation,param)
+      connection = Service.open(HOST,USER,PASS)
+      send(operation,connection,param)
+      connection.close
+    end
+    
+    with_a_connection :query, "big_data"
+
+!SLIDE
+
+## Mo' Functions, Mo' Problems
+
+    @@@ Ruby
+    def query(connection,query_string) ; end
+    def query_ordered(connection,query_string,sorting) ; end 
+    def query_filtered(connection,query_string,filter) ; end
+
+!SLIDE
+
+## Maybe you could do this instead
+    @@@ Ruby
+    def query(connection,query_params = {}) ; end
+    
+    with_a_connection :query, :query => "big_data", 
+      :filter => false, :ordered => :ascending
+
+!SLIDE
+
+## I've got 99 parameters
+## and I can't keep track of one
+
+    @@@ Ruby
+    def query(connection,query_param = {})
+      
+      if query_param[:filter] 
+      
+        if query_param[:ordered] == :ascending
+          results = connection.asc_query_with_filter query_param[:query], query_param[:filter]
+        elsif query_param[:ordered] == :descending
+          results = connection.desc_query_with_filter query_param[:query], query_param[:filter]
+        else
+          results = connection.query_with_filter query_param[:query], query_param[:filter]
         end
+        
+      else
+        if query_param[:ordered] == :ascending
+          results = connection.asc_query query_param[:query]
+        elsif query_param[:ordered] == :descending
+          results = connection.desc_query query_param[:query]
+        else
+          results = connection.query_with_filter query_param[:query]
+        end
+      end
+      
+    end
+      
+!SLIDE quote
+
+## Things used to be so Simple!
+
+!SLIDE
+
+## Why can't I do something like this?
+
+    @@@ Ruby
+    with_a_connection do |connection|
+      connection.query "for big data"
+    end
+    
+    with_a_connection do |connection|
+      connection.update "my data set"
+    end
+
+!SLIDE
+
+## Doing it cleanly
+
+    @@@ Ruby
+    def with_a_connection
+      connection = Service.open(HOST,USER,PASS)
+      
+      if block_given?
+        yield(connection)
+      end
+      
+      connection.close
+    end
+
+    with_a_connection do |connection|
+      connection.query "for big data"
+    end
+
+!SLIDE
+
+## This is kind of like...
+
+    @@@ Ruby
+    
+    with_a_connection do |connection|
+      connection.query "for big data"
+    end
+    
+## you created this...
+    
+    @@@ Ruby
+    
+    def anonymous_function(connection)
+      connection.query "for big data"
+    end
+
+!SLIDE
+
+## That the yield will call!
+
+    @@@ Ruby
+    def with_a_connection
+      connection = Service.open(HOST,USER,PASS)
+  
+      if block_given?
+        # anonymous_function(connection)
+        yield(connection)
       end
   
+      connection.close
     end
 
 !SLIDE
 
-## DRY, I don't think so!
+## Succinct
 
     @@@ Ruby
-    class Configuration
-      
-      def host
-        @host ||= (@source_1['host'] || @source_2['host'])
-      end
-      
-      def port
-        @port ||= (@source_1['port'] || @source_2['port'])
-      end
-      
+    def using
+      connection = Service.open(HOST,USER,PASS)
+      yield connection if block_given?
+      connection.close
     end
 
 !SLIDE
 
-## When method calls go missing!
+## Doing it safely
 
     @@@ Ruby
-    class Configuration
-
-      def method_missing(name,args,&block)
-        
-        @source_1[name] || @source_2[name]
-       
-      end
-
+    def safe_using
+      
+      current_connection = Service.open(HOST,USER,PASS)
+      yield current_connection if block_given?
+      connection.close
+      
+    rescue => exception
+      warn "There was an error #{exception}"
     end
-    
+
+    safe_using do |con|
+      con.query "for even bigger data"
+    end
+
 !SLIDE
 
-## Lots of possibilities
+## Using yield?
 
     @@@ Ruby
-    class Configuration
-
-      def method_missing(name,args,&block)
-        
-        # Becareful, this could be dangerous...
-        
-        define_method name do
-          @source_1[name] || @source_2[name]
-        end
-   
-      end
-
+    def safe_using(&rumpelstiltskin)
+      using yield
+    rescue => exception
+      warn "There was an error #{exception}"
     end
+
+    safe_using do |con|
+      con.query "for even bigger data"
+    end
+
+!SLIDE
+
+## Giving the block a name
+
+    @@@ Ruby
+    def safe_using(&block)
+      using(&block) if block
+    rescue => exception
+      warn "There was an error #{exception}"
+    end
+
+    safe_using do |con|
+      con.query "for even bigger data"
+    end
+
+!SLIDE
+
+## Name it your way
+
+    @@@ Ruby
+    def safe_using(&rumpelstiltskin)
+      using(&rumpelstiltskin) if rumpelstiltskin
+    rescue => exception
+      warn "There was an error #{exception}"
+    end
+
+    safe_using do |con|
+      con.query "for even bigger data"
+    end
+
+!SLIDE
